@@ -32,6 +32,10 @@ func (s *Machine) Push(value int) {
 }
 
 func (s *Machine) Pop() int {
+	if s.top == -1 {
+		s.err = "Stack underflow! "
+		return -1
+	}
 	popped := s.stack[s.top]
 	s.stack = s.stack[:s.top]
 	s.top--
@@ -89,6 +93,12 @@ func (s *Machine) Equal() {
 	s.Push(0); return
 }
 
+func (s *Machine) LessThan() {
+	a := s.Pop()
+	if s.Pop() < a { s.Push(-1); return }
+	s.Push(0); return
+}
+
 // Printing functions
 func (s *Machine) Print() {
 	if s.top == -1 {
@@ -114,12 +124,32 @@ func (s *Machine) Dup() {
 	return
 }
 
+func (s *Machine) Dup2() {
+	b := s.Pop()
+	a := s.Pop()
+	s.Push(a)
+	s.Push(b)
+	s.Push(a)
+	s.Push(b)
+}
+
 func (s *Machine) Swap() {
 	b := s.Pop()
 	a := s.Pop()
 	s.Push(b)
 	s.Push(a)
 	return
+}
+
+func (s *Machine) Swap2() {
+	d := s.Pop()
+	c := s.Pop()
+	b := s.Pop()
+	a := s.Pop()
+	s.Push(c)
+	s.Push(d)
+	s.Push(a)
+	s.Push(b)
 }
 
 func (s *Machine) Drop() {
@@ -165,9 +195,9 @@ func (s *Machine) ConditionalStep(idx int, ss[]string, cons string, alt string, 
 	// For control words, return things as they are
 	v := ss[idx]
 	if (v == "IF") { b_alt = false } 
-	if v == "ELSE" { b_alt = true }
+	if v == "ELSE" { b_alt = true; return cons, alt, true, b_alt }
 	// THEN is the ending
-	if v == "THEN" { return cons, alt, false, b_alt }
+	if v == "THEN" {  s.ExecuteConditional(cons, alt); return cons, alt, false, b_alt }
 
 	if !b_alt {
 		// build the consequent
@@ -187,18 +217,33 @@ func (s *Machine) ExecuteConditional(cons string, alt string) {
 	}
 }
 
+func (s *Machine) PrintStep(idx int, ss []string, ps string) (string, bool) {
+	v := ss[idx]
+	if v == "\"" {
+		s.ExecutePrint(ps)
+		return "", false
+	} else {
+		return ps + " " + v, true
+	}
+}
+
+func (s *Machine) ExecutePrint(ps string) {
+	fmt.Print(strings.TrimLeft(ps, " ") + " ")
+} 
+
 func (s *Machine) Execute(input string) {
 	ss := strings.Fields(strings.Trim(input, "\n"))
-	var compile, comment bool
-	var conditional, b_alt bool
+	var compile, comment, print, conditional, b_alt bool
 	var name, actions string
-	var cons, alt string
+	var cons, alt, ps string
 	
 	for idx, v := range ss {
 		if compile {
 			name, actions, compile = s.CompileStep(idx, ss, name, actions)
 		} else if conditional {
 			cons, alt, conditional, b_alt = s.ConditionalStep(idx, ss, cons, alt, b_alt)
+		} else if print {
+			ps, print = s.PrintStep(idx, ss, ps)
 		} else if comment {
 			// Do absolutely nothing
 		} else {
@@ -221,10 +266,13 @@ func (s *Machine) Execute(input string) {
 				// bools
 				case "=": s.Equal()
 				case "0=": s.Push(0); s.Equal()
+				case "<": s.LessThan()
 				
 				// Machine fun!(ctions)
 				case "DUP": s.Dup()
+				case "DUP2": s.Dup2()
 				case "SWAP": s.Swap()
+				case "SWAP2": s.Swap2()
 				case "DROP": s.Drop()
 				case "ROT": s.Rot()
 				case "OVER": s.Swap(); s.Dup(); s.Rot(); s.Rot()
@@ -234,9 +282,11 @@ func (s *Machine) Execute(input string) {
 				case ":": compile = true
 				case ";": compile = false
 				case "IF": conditional = true
-				case "THEN": conditional = false; s.ExecuteConditional(cons, alt)
+				case "THEN": conditional = false
 				case "(": comment = true
 				case ")": comment = false
+				case ".\"": print = true
+				case "\"": print = false
 
 				// *sigh* put it in the Machine with the others
 				default: s.TryToPush(v)

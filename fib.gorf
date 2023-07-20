@@ -1,0 +1,9 @@
+( fibonacci function i guess lol )
+: -ROT ROT ROT ; ( a b c -- c a b )
+: STEP 1 + -ROT SWAP OVER + ROT ; ( a b n -- b a+b n+1 )
+: PRE SWAP SWAP2 ROT ; ( a b n l -- l a b n )
+: POST -ROT SWAP2 SWAP ; ( l a b n -- a b n l )
+: ITER DUP2 < IF PRE STEP POST ITER THEN ;
+: FIB DUP 3 < IF DROP 1 ELSE 1 1 2 POST ITER THEN DROP DROP DROP ; 
+  ( n -- nth fibonacci number )
+93 FIB .

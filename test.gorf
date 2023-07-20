@@ -1,1 +1,2 @@
-0 IF 2 ELSE 0 THEN .
+: ++ 1 + ;
+: VARIABLE : ; ;
