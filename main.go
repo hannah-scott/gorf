@@ -5,14 +5,15 @@ import (
 	"bufio"
 	"os"
 	"strings"
-	"strconv"
 	"io"
+	"strconv"
 )
 
-type Stack struct {
-	items []string
+type Machine struct {
+	stack []int
 	top 	int
 	dict	Dictionary
+	err		string
 }
 
 type Word struct {
@@ -24,90 +25,96 @@ type Dictionary struct {
 	contents 	[]Word
 }
 
-func (s *Stack) Push(value string) {
-	s.items = append(s.items, value)
+func (s *Machine) Push(value int) {
+	s.stack = append(s.stack, value)
 	s.top++
 	return
 }
 
-func (s *Stack) Pop() string {
-	popped := s.items[s.top]
-	s.items = s.items[:s.top]
+func (s *Machine) Pop() int {
+	popped := s.stack[s.top]
+	s.stack = s.stack[:s.top]
 	s.top--
 	return popped
 }
 
-func typeOf(i string) string {
-	return fmt.Sprintf("%T", i)
+func (s *Machine) TryToPush(in string) {
+	v, err := strconv.Atoi(in)
+	if err != nil {
+		s.err = in + "? "
+		return
+	}
+	s.Push(v)
+	return
 }
 
 // math(s)
-func (s *Stack) PopInt() (int, error) {
-	return strconv.Atoi(s.Pop())
+func (s *Machine) PopInt() (int, error) {
+	return s.Pop(), nil
 }
 
-func (s *Stack) Plus() {
+func (s *Machine) Plus() {
 	b, _ := s.PopInt()
 	a, _ := s.PopInt()
-	s.Push(strconv.Itoa(a + b))
+	s.Push(a + b)
 	return
 }
 
-func (s *Stack) Minus() {
+func (s *Machine) Minus() {
 	b, _ := s.PopInt()
 	a, _ := s.PopInt()
-	s.Push(strconv.Itoa(a - b))
+	s.Push(a - b)
 	return
 }
 
-func (s *Stack) Mult() {
+func (s *Machine) Mult() {
 	b, _ := s.PopInt()
 	a, _ := s.PopInt()
-	s.Push(strconv.Itoa(a * b))
+	s.Push(a * b)
 	return
 }
 
-func (s *Stack) Div() {
+func (s *Machine) Div() {
 	b, _ := s.PopInt()
 	a, _ := s.PopInt()
-	s.Push(strconv.Itoa(a / b))
+	s.Push(a / b)
 	return
 }
 
-func (s *Stack) Equal() {
+func (s *Machine) Equal() {
 	a, _ := s.PopInt()
 	b, _ := s.PopInt()
 	// Return -1 for true, otherwise 0
-	if a == b { s.Push("-1"); return }
-	s.Push("0"); return
+	if a == b { s.Push(-1); return }
+	s.Push(0); return
 }
 
 // Printing functions
-func (s *Stack) Print() {
+func (s *Machine) Print() {
 	if s.top == -1 {
-		fmt.Print("Stack underflow! ")
+		s.err = "Stack underflow! "
 	} else {
 		fmt.Print(s.Pop(), " ")
 	}
 	return
 }
 
-func (s *Stack) Prints() {
-	for _, v := range s.items {
+func (s *Machine) Prints() {
+	for _, v := range s.stack {
 		fmt.Print(v, " ")
 	}
 	return
 }
 
-// Stack functions (i know it's all stack functions stop)
-func (s *Stack) Dup() {
+// Machine functions (i know it's all Machine functions stop)
+func (s *Machine) Dup() {
 	a := s.Pop()
 	s.Push(a)
 	s.Push(a)
 	return
 }
 
-func (s *Stack) Swap() {
+func (s *Machine) Swap() {
 	b := s.Pop()
 	a := s.Pop()
 	s.Push(b)
@@ -115,11 +122,11 @@ func (s *Stack) Swap() {
 	return
 }
 
-func (s *Stack) Drop() {
+func (s *Machine) Drop() {
 	s.Pop(); return
 }
 
-func (s *Stack) Rot() {
+func (s *Machine) Rot() {
 	c := s.Pop()
 	b := s.Pop()
 	a := s.Pop()
@@ -130,7 +137,7 @@ func (s *Stack) Rot() {
 }
 
 // Control states are weirdddd
-func (s *Stack) CompileStep(idx int, ss []string, n string, a string) (string, string, bool) {
+func (s *Machine) CompileStep(idx int, ss []string, n string, a string) (string, string, bool) {
 	// get the word you're looking at
 	v := ss[idx]
 	if v == ";" { 
@@ -154,17 +161,44 @@ func (s *Stack) CompileStep(idx int, ss []string, n string, a string) (string, s
 	}
 }
 
+func (s *Machine) ConditionalStep(idx int, ss[]string, cons string, alt string, b_alt bool) (string, string, bool, bool) {
+	// For control words, return things as they are
+	v := ss[idx]
+	if (v == "IF") { b_alt = false } 
+	if v == "ELSE" { b_alt = true }
+	// THEN is the ending
+	if v == "THEN" { return cons, alt, false, b_alt }
 
-func (s *Stack) Execute(input string) {
+	if !b_alt {
+		// build the consequent
+		cons += v + " "
+	} else {
+		alt += v + " "
+	}
+
+	return cons, alt, true, b_alt
+}
+
+func (s *Machine) ExecuteConditional(cons string, alt string) {
+	if (s.Pop() != 0) {
+		s.Execute(cons)
+	} else {
+		s.Execute(alt)
+	}
+}
+
+func (s *Machine) Execute(input string) {
 	ss := strings.Fields(strings.Trim(input, "\n"))
-	var compile, conditional, comment bool
+	var compile, comment bool
+	var conditional, b_alt bool
 	var name, actions string
+	var cons, alt string
 	
 	for idx, v := range ss {
 		if compile {
 			name, actions, compile = s.CompileStep(idx, ss, name, actions)
 		} else if conditional {
-			
+			cons, alt, conditional, b_alt = s.ConditionalStep(idx, ss, cons, alt, b_alt)
 		} else if comment {
 			// Do absolutely nothing
 		} else {
@@ -186,9 +220,9 @@ func (s *Stack) Execute(input string) {
 				
 				// bools
 				case "=": s.Equal()
-				case "0=": s.Push("0"); s.Equal()
+				case "0=": s.Push(0); s.Equal()
 				
-				// stack fun!(ctions)
+				// Machine fun!(ctions)
 				case "DUP": s.Dup()
 				case "SWAP": s.Swap()
 				case "DROP": s.Drop()
@@ -200,12 +234,12 @@ func (s *Stack) Execute(input string) {
 				case ":": compile = true
 				case ";": compile = false
 				case "IF": conditional = true
-				case "THEN": conditional = false
+				case "THEN": conditional = false; s.ExecuteConditional(cons, alt)
 				case "(": comment = true
 				case ")": comment = false
 
-				// *sigh* put it in the stack with the others
-				default: s.Push(v)
+				// *sigh* put it in the Machine with the others
+				default: s.TryToPush(v)
 				}			
 			}
 		}
@@ -214,12 +248,13 @@ func (s *Stack) Execute(input string) {
 
 func main () {
 	reader := bufio.NewReader(os.Stdin)
-	s := Stack{
+	s := Machine{
 		top: -1,
 		dict : Dictionary{
 			[]Word{
 			},
 		},
+		err: "",
 	}
 
 	for {
@@ -229,7 +264,12 @@ func main () {
 		}
 		if len(strings.Fields(input)) > 0 {
 			s.Execute(strings.ToUpper(input))
-			fmt.Println("ok")
+			if s.err != "" {
+				fmt.Println(s.err)
+				s.err = ""
+			} else {
+				fmt.Println("ok")
+			}
 		}
 		if err == io.EOF { os.Exit(0) }
 	}

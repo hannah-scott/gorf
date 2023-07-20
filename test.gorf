@@ -1,2 +1,1 @@
-: 1 2 ; ( hannah what are you doing )
-1 .     ( no stop please why )
+0 IF 2 ELSE 0 THEN .
