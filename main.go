@@ -231,17 +231,38 @@ func (s *Machine) ExecutePrint(ps string) {
 	fmt.Print(strings.TrimLeft(ps, " ") + " ")
 } 
 
+func (s *Machine) LoopStep(idx int, ss []string, ls string) (string, bool) {
+	// Get contents of loop
+	v := ss[idx]
+	if v == "DO" {
+		s.ExecuteLoop(ls)
+		return "", false
+	} else {
+		return ls + " " + v, true
+	}
+}
+
+func (s *Machine) ExecuteLoop(ls string) {
+	s.Execute("DUP 0=")
+	for s.Pop() == 0 {
+		s.Execute(ls)
+		s.Execute("DUP 0=")
+	}
+}
+
 func (s *Machine) Execute(input string) {
 	ss := strings.Fields(strings.Trim(input, "\n"))
-	var compile, comment, print, conditional, b_alt bool
+	var compile, comment, print, conditional, loop, b_alt bool
 	var name, actions string
-	var cons, alt, ps string
+	var cons, alt, ps, ls string
 	
 	for idx, v := range ss {
 		if compile {
 			name, actions, compile = s.CompileStep(idx, ss, name, actions)
 		} else if conditional {
 			cons, alt, conditional, b_alt = s.ConditionalStep(idx, ss, cons, alt, b_alt)
+		} else if loop {
+			ls, loop = s.LoopStep(idx, ss, ls)
 		} else if print {
 			ps, print = s.PrintStep(idx, ss, ps)
 		} else if comment {
@@ -283,6 +304,8 @@ func (s *Machine) Execute(input string) {
 				case ";": compile = false
 				case "IF": conditional = true
 				case "THEN": conditional = false
+				case "WHILE": loop = true
+				case "DO": loop = false
 				case "(": comment = true
 				case ")": comment = false
 				case ".\"": print = true
