@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"bufio"
 	"os"
 	"strings"
@@ -104,14 +103,14 @@ func (s *Machine) Print() {
 	if s.top == -1 {
 		s.err = "Stack underflow! "
 	} else {
-		fmt.Print(s.Pop(), " ")
+		print(s.Pop(), " ")
 	}
 	return
 }
 
 func (s *Machine) Prints() {
 	for _, v := range s.stack {
-		fmt.Print(v, " ")
+		print(v, " ")
 	}
 	return
 }
@@ -228,7 +227,7 @@ func (s *Machine) PrintStep(idx int, ss []string, ps string) (string, bool) {
 }
 
 func (s *Machine) ExecutePrint(ps string) {
-	fmt.Print(strings.TrimLeft(ps, " ") + " ")
+	print(strings.TrimLeft(ps, " ") + " ")
 } 
 
 func (s *Machine) LoopStep(idx int, ss []string, ls string) (string, bool) {
@@ -338,10 +337,10 @@ func main () {
 		if len(strings.Fields(input)) > 0 {
 			s.Execute(strings.ToUpper(input))
 			if s.err != "" {
-				fmt.Println(s.err)
+				print(s.err + "\n")
 				s.err = ""
 			} else {
-				fmt.Println("ok")
+				print("ok\n")
 			}
 		}
 		if err == io.EOF { os.Exit(0) }
