@@ -251,7 +251,7 @@ func (s *Machine) ExecuteLoop(ls string) {
 
 func (s *Machine) Execute(input string) {
 	ss := strings.Fields(strings.Trim(input, "\n"))
-	var compile, comment, print, conditional, loop, b_alt bool
+	var compile, comment, printing, conditional, loop, b_alt bool
 	var name, actions string
 	var cons, alt, ps, ls string
 	
@@ -262,8 +262,8 @@ func (s *Machine) Execute(input string) {
 			cons, alt, conditional, b_alt = s.ConditionalStep(idx, ss, cons, alt, b_alt)
 		} else if loop {
 			ls, loop = s.LoopStep(idx, ss, ls)
-		} else if print {
-			ps, print = s.PrintStep(idx, ss, ps)
+		} else if printing {
+			ps, printing = s.PrintStep(idx, ss, ps)
 		} else if comment {
 			// Do absolutely nothing
 		} else {
@@ -297,6 +297,7 @@ func (s *Machine) Execute(input string) {
 				case "ROT": s.Rot()
 				case "OVER": s.Swap(); s.Dup(); s.Rot(); s.Rot()
 				case ".S": s.Prints()
+				case "CR": print("\n")
 
 				// flow controls
 				case ":": compile = true
@@ -307,8 +308,8 @@ func (s *Machine) Execute(input string) {
 				case "DO": loop = false
 				case "(": comment = true
 				case ")": comment = false
-				case ".\"": print = true
-				case "\"": print = false
+				case ".\"": printing = true
+				case "\"": printing = false
 
 				// *sigh* put it in the Machine with the others
 				default: s.TryToPush(v)

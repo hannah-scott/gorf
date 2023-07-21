@@ -1,0 +1,8 @@
+( for loops )
+: NOT -1 = IF 0 ELSE -1 THEN ;
+: != = NOT ;
+: INC 1 + ;
+: D ." > " .S CR ;
+1 10 D DUP2 != WHILE DROP SWAP INC SWAP D DUP2 != DO
+
+( cool so we can loop -- now how about we use that for something? )
