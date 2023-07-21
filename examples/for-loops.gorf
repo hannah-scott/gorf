@@ -3,6 +3,7 @@
 : != = NOT ;
 : INC 1 + ;
 : D ." > " .S CR ;
-1 10 D DUP2 != WHILE DROP SWAP INC SWAP D DUP2 != DO
+10 1 D DUP2 != WHILE INC D DUP2 != DO
+.S
 
 ( cool so we can loop -- now how about we use that for something? )

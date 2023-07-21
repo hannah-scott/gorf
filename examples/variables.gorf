@@ -1,0 +1,29 @@
+: NOT       ( a -- a )          0= ;
+: -ROT      ( a b c -- c a b )  ROT ROT ;
+: ++        ( a -- a )          1 + ;
+: --        ( a -- a )          1 - ;
+: >=        ( a -- a )          < NOT ;
+: SQR       ( a -- a )          DUP * ;
+: SQRT-STEP ( a -- a )          ++ DUP2 SQR >= ;
+: !=        ( a b -- a )        = NOT ;
+
+VARIABLE CANDIDATE
+VARIABLE RESULT
+2147483647 ! CANDIDATE ( largest 32-bit prime )
+-1 ! RESULT ( we're going to hold truthiness here )
+
+( find the sqrt of the candidate )
+@ CANDIDATE 1 DUP2 SQR >= WHILE SQRT-STEP DO --
+
+( we have [candidate, sqrt] on the stack )
+: DIVIDES?  ( a b -- a b c )    DUP2 MOD 0= ;
+SWAP DROP ( and now it's just sqrt )
+
+2 ( we're count to use this as a counter )
+( s c -- s c p%c )
+: COPRIME? ( s c -- s c p%c=0 ) DUP @ CANDIDATE SWAP MOD 0= NOT ;
+: STEP ( s c -- s c ) COPRIME? IF ++ ELSE 0 ! RESULT DROP DUP THEN ;
+DUP2 != WHILE STEP DUP2 != DO
+
+: PRINT-RESULT @ RESULT IF ." IS PRIME " ELSE ." IS NOT PRIME " THEN ;
+@ CANDIDATE . PRINT-RESULT
