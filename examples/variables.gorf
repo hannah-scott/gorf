@@ -13,7 +13,7 @@ VARIABLE RESULT
 -1 ! RESULT ( we're going to hold truthiness here )
 
 ( find the sqrt of the candidate )
-@ CANDIDATE 1 DUP2 SQR >= WHILE SQRT-STEP DO --
+@ CANDIDATE 1 DUP2 SQR >= WHILE SQRT-STEP DO
 
 ( we have [candidate, sqrt] on the stack )
 : DIVIDES?  ( a b -- a b c )    DUP2 MOD 0= ;
