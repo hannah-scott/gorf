@@ -4,4 +4,4 @@ A Forth in Go.
 
 ## to do
 
-- [ ] while loops inside of compiled words break
+- [x] while loops inside of compiled words break

@@ -3,7 +3,7 @@ package main
 import (
 	"strconv"
 	"strings"
-	// "fmt"
+	"fmt"
 )
 
 type Machine struct {
@@ -36,6 +36,7 @@ func (s *Machine) Push(value int) {
 
 func (s *Machine) Pop() int {
 	if s.top == -1 {
+		fmt.Println("It's a pop prblem")
 		s.err = "Stack underflow! "
 		return -1
 	}
@@ -55,51 +56,40 @@ func (s *Machine) TryToPush(in string) {
 	return
 }
 
-// math(s)
-func (s *Machine) PopInt() (int, error) {
-	return s.Pop(), nil
-}
-
 func (s *Machine) Plus() {
-	b, _ := s.PopInt()
-	a, _ := s.PopInt()
-	s.Push(a + b)
+	s.Push(s.Pop() + s.Pop())
 	return
 }
 
 func (s *Machine) Minus() {
-	b, _ := s.PopInt()
-	a, _ := s.PopInt()
+	b := s.Pop()
+	a := s.Pop()
 	s.Push(a - b)
 	return
 }
 
 func (s *Machine) Mult() {
-	b, _ := s.PopInt()
-	a, _ := s.PopInt()
-	s.Push(a * b)
+	s.Push(s.Pop() * s.Pop())
 	return
 }
 
 func (s *Machine) Div() {
-	b, _ := s.PopInt()
-	a, _ := s.PopInt()
+	b := s.Pop()
+	a := s.Pop()
 	s.Push(a / b)
 	return
 }
 
 func (s *Machine) Mod() {
-	b, _ := s.PopInt()
-	a, _ := s.PopInt()
+	b := s.Pop()
+	a := s.Pop()
 	s.Push(a % b)
 	return
 }
 
 func (s *Machine) Equal() {
-	a, _ := s.PopInt()
-	b, _ := s.PopInt()
 	// Return -1 for true, otherwise 0
-	if a == b { s.Push(-1); return }
+	if s.Pop() == s.Pop() { s.Push(-1); return }
 	s.Push(0); return
 }
 
@@ -128,19 +118,13 @@ func (s *Machine) Prints() {
 
 // Machine functions (i know it's all Machine functions stop)
 func (s *Machine) Dup() {
-	a := s.Pop()
-	s.Push(a)
-	s.Push(a)
+	s.Push(s.stack[s.top])
 	return
 }
 
 func (s *Machine) Dup2() {
-	b := s.Pop()
-	a := s.Pop()
-	s.Push(a)
-	s.Push(b)
-	s.Push(a)
-	s.Push(b)
+	s.Push(s.stack[s.top - 1])
+	s.Push(s.stack[s.top - 1])
 }
 
 func (s *Machine) Swap() {
@@ -167,7 +151,9 @@ func (s *Machine) Drop() {
 }
 
 func (s *Machine) DropStack() {
-	s.stack = []int{}; return
+	s.stack = []int{}
+	s.top = -1 
+	return	
 }
 
 func (s *Machine) Rot() {
@@ -178,6 +164,21 @@ func (s *Machine) Rot() {
 	s.Push(c)
 	s.Push(a)
 	return
+}
+
+func (s *Machine) Rot2() {
+	f := s.Pop()
+	e := s.Pop()
+	d := s.Pop()
+	c := s.Pop()
+	b := s.Pop()
+	a := s.Pop()
+	s.Push(c)
+	s.Push(d)
+	s.Push(e)
+	s.Push(f)
+	s.Push(a)
+	s.Push(b)
 }
 
 func (s *Machine) Compile(delim string) (string, string) {
@@ -224,18 +225,9 @@ func (s *Machine) While() {
 	n, a := s.Compile("DO")
 	s.RPop()
 	s.RPush(s.addr)
-
-	t := n + " " + a
-
-	
 	for (s.Pop() != 0 ) {
-		// fmt.Println(t)
-		s.Execute(t)
-		// fmt.Println(s.rstack)
-		// fmt.Println(s.stack)
+		s.SubRoutine(func() { s.Execute(n + " " + a) } )
 	}
-	s.addr = s.RPop()
-
 	return
 }
 

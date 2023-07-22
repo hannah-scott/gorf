@@ -1,9 +1,9 @@
-( for loops )
-: NOT -1 = IF 0 ELSE -1 THEN ;
+: NOT 0= ;
 : != = NOT ;
-: INC 1 + ;
-: D ." > " .S CR ;
-10 1 D DUP2 != WHILE INC D DUP2 != DO
-.S
+." looping inline "
+10 1 .S CR 2DUP != WHILE 1 + .S CR 2DUP != DO
+.. ." stack cleared "
 
-( cool so we can loop -- now how about we use that for something? )
+." looping inside a compiled word "
+: LOOP .S CR 2DUP != WHILE 1 + .S CR 2DUP != DO ;
+10 1 LOOP
